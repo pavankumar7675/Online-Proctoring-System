@@ -433,9 +433,9 @@ Purpose: Detect head orientation deviation from neutral
 │ 3 frames   │   │  roll         │
 │ collected  │   │               │
 │            │   │ Check thresh: │
-│ If yes:    │   │ |ΔY|>15° OR  │
-│ Calculate  │   │ |ΔP|>10° OR  │
-│ mean →     │   │ |ΔR|>10°     │
+│ If yes:    │   │ |ΔY|>15° OR   │
+│ Calculate  │   │ |ΔP|>10° OR   │
+│ mean →     │   │ |ΔR|>10°      │
 │ baseline   │   │               │
 └────────────┘   └────┬──────────┘
                       │

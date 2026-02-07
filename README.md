@@ -2,7 +2,25 @@
 
 An advanced AI-powered online exam proctoring system with face verification, head pose monitoring, eye gaze tracking, and object detection capabilities to ensure exam integrity.
 
-## 📋 Table of Contents
+## � Quick Start
+
+**Want to run the system right now?** 
+
+👉 **See [RUN.md](RUN.md) for step-by-step instructions**
+
+Just need to run 2 commands in separate terminals:
+```powershell
+# Terminal 1
+.\start-backend.ps1
+
+# Terminal 2  
+.\start-frontend.ps1
+```
+Then open http://localhost:5173 in your browser!
+
+---
+
+## �📋 Table of Contents
 
 - [Features](#features)
 - [System Requirements](#system-requirements)
@@ -146,12 +164,65 @@ On first run, YOLOv8 will automatically download the model weights (~6MB):
 
 ## 🚀 Usage
 
-### Run the Application
+### Option 1: Standalone Script (Basic)
 
 ```bash
 # Make sure virtual environment is activated
 python app.py
 ```
+
+### Option 2: Web Application (Recommended)
+
+The proctoring system includes a real-time web interface built with React and Flask.
+
+#### Backend Setup
+
+1. **Install Python Dependencies:**
+   ```bash
+   pip install flask flask-cors flask-socketio opencv-python mediapipe keras-facenet tensorflow ultralytics numpy
+   ```
+
+2. **Start the Flask Server:**
+   ```bash
+   # From the Online-Proctoring directory
+   python server.py
+   ```
+   
+   Server will run on http://localhost:5000
+
+#### Frontend Setup
+
+1. **Navigate to Frontend Directory:**
+   ```bash
+   cd client/proctoring
+   ```
+
+2. **Install Node Dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start Development Server:**
+   ```bash
+   npm run dev
+   ```
+   
+   Frontend will run on http://localhost:5173
+
+4. **Open in Browser:**
+   - Navigate to http://localhost:5173
+   - Grant webcam permissions when prompted
+   - Capture reference image in setup screen
+   - Start proctoring session for real-time monitoring
+
+#### Web Application Features
+
+- **Real-time Video Feed**: Live webcam monitoring with frame analysis
+- **WebSocket Communication**: Low-latency frame processing via Socket.IO
+- **Interactive Dashboard**: Visual statistics and violation metrics
+- **Alert System**: Real-time notifications for suspicious activities
+- **Session Management**: Start/stop sessions with detailed reports
+- **Baseline Calibration**: Automatic neutral position establishment in first 3 frames
 
 ### Expected Output
 
@@ -418,15 +489,37 @@ pip install ultralytics
 ```
 Online-Proctoring/
 │
-├── app.py                 # Main application script
-├── requirements.txt       # Python dependencies
-├── README.md             # This file
-├── flow.txt              # Complete flow documentation with diagrams
+├── app.py                      # Standalone script (basic usage)
+├── server.py                   # Flask backend server with WebSocket
+├── requirements.txt            # Python dependencies
+├── README.md                   # This file
+├── flow.txt                    # Complete flow documentation with diagrams
 │
-└── (Optional folders)
-    ├── videos/           # Store test videos
-    ├── references/       # Store reference images
-    └── logs/            # Store output logs
+├── client/
+│   └── proctoring/
+│       ├── package.json        # Node dependencies
+│       ├── vite.config.js      # Vite configuration
+│       ├── tailwind.config.js  # Tailwind CSS configuration
+│       ├── postcss.config.js   # PostCSS configuration
+│       │
+│       ├── public/             # Static assets
+│       │
+│       └── src/
+│           ├── App.jsx         # Main React component
+│           ├── main.jsx        # React entry point
+│           ├── index.css       # Global styles with Tailwind
+│           │
+│           └── components/
+│               ├── SetupScreen.jsx         # Reference image capture
+│               ├── ProctoringSession.jsx   # Live monitoring interface
+│               ├── StatusIndicator.jsx     # Connection status
+│               ├── Statistics.jsx          # Violation metrics
+│               └── AlertPanel.jsx          # Alert log
+│
+└── (Runtime folders)
+    ├── videos/                 # Store test videos
+    ├── references/             # Store reference images
+    └── logs/                   # Store output logs
 ```
 
 ## 🎯 Customization Options
