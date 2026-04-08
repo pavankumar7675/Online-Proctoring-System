@@ -8,6 +8,9 @@ const AlertPanel = ({ alerts }) => {
       case 'gaze': return <Eye className="w-5 h-5" />;
       case 'person': return <Users className="w-5 h-5" />;
       case 'object': return <Package className="w-5 h-5" />;
+      case 'liveness': return <AlertTriangle className="w-5 h-5" />;
+      case 'quality': return <AlertTriangle className="w-5 h-5" />;
+      case 'motion': return <AlertTriangle className="w-5 h-5" />;
       default: return <AlertTriangle className="w-5 h-5" />;
     }
   };
@@ -23,6 +26,10 @@ const AlertPanel = ({ alerts }) => {
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'person':
         return 'bg-purple-100 text-purple-800 border-purple-300';
+      case 'liveness':
+      case 'quality':
+      case 'motion':
+        return 'bg-amber-100 text-amber-800 border-amber-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
@@ -65,6 +72,9 @@ const AlertPanel = ({ alerts }) => {
                         gaze: 'Looking Away',
                         person: 'Multiple Persons Detected',
                         object: 'Prohibited Object Detected',
+                        liveness: 'Passive Liveness Risk',
+                        quality: 'Liveness Quality Low',
+                        motion: 'Motion Pattern Risk',
                       }[alert.type]}
                     </span>
                     {getSeverityBadge(alert.type)}

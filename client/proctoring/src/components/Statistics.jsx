@@ -58,6 +58,43 @@ const Statistics = ({ stats, currentFrame }) => {
         </div>
       )}
 
+      {stats.tuning && (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-slate-900 mb-2">Tuning Profile</h3>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-slate-600">Profile:</span>
+              <span className="ml-1 font-semibold text-slate-900">{stats.tuning.profile}</span>
+            </div>
+            <div>
+              <span className="text-slate-600">Logging:</span>
+              <span className={`ml-1 font-semibold ${stats.tuning.debug_logging_enabled ? 'text-green-700' : 'text-slate-700'}`}>
+                {stats.tuning.debug_logging_enabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-600">Log Format:</span>
+              <span className="ml-1 font-mono text-slate-900">{stats.tuning.debug_log_format || 'jsonl'}</span>
+            </div>
+            <div className="col-span-2 break-all">
+              <span className="text-slate-600">Log Path:</span>
+              <span className="ml-1 font-mono text-slate-900">{stats.tuning.debug_log_path || 'Not enabled'}</span>
+            </div>
+          </div>
+
+          {stats.thresholds && (
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-mono text-slate-700">
+              <div>Face ratio: {stats.thresholds.passive_liveness_min_face_ratio}</div>
+              <div>Brightness: {stats.thresholds.passive_liveness_min_brightness}-{stats.thresholds.passive_liveness_max_brightness}</div>
+              <div>Blur var: {stats.thresholds.passive_liveness_min_blur_variance}</div>
+              <div>EAR threshold: {stats.thresholds.passive_ear_threshold}</div>
+              <div>Blink frames: {stats.thresholds.passive_ear_closed_frames_min}</div>
+              <div>Motion std: {stats.thresholds.passive_motion_static_std_threshold}/{stats.thresholds.passive_motion_natural_std_threshold}</div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Current Frame Details */}
       {currentFrame && stats.calibrated && (
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -89,7 +126,209 @@ const Statistics = ({ stats, currentFrame }) => {
                 R: {currentFrame.gaze.right_ratio?.toFixed(2)}
               </span>
             </div>
+
+            {currentFrame.liveness && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Passive Liveness:</span>
+                <span className={`font-medium ${
+                  currentFrame.liveness.passive_label === 'live'
+                    ? 'text-green-600'
+                    : currentFrame.liveness.passive_label === 'spoof'
+                    ? 'text-red-600'
+                    : currentFrame.liveness.passive_label === 'quality_insufficient'
+                    ? 'text-orange-600'
+                    : 'text-yellow-600'
+                }`}>
+                  {currentFrame.liveness.passive_label} ({currentFrame.liveness.passive_score?.toFixed(2)})
+                </span>
+              </div>
+            )}
+
+            {currentFrame.liveness?.quality_insufficient && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Quality Gate:</span>
+                <span className="font-medium text-orange-600">
+                  Insufficient
+                </span>
+              </div>
+            )}
+
+            {currentFrame.liveness?.signals && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Blink Rate:</span>
+                  <span className="font-mono text-gray-900">
+                    {currentFrame.liveness.signals.blink_rate_per_min?.toFixed(1)} /min
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Blink Recent:</span>
+                  <span className={`font-medium ${
+                    currentFrame.liveness.signals.blink_detected_recently ? 'text-green-600' : 'text-yellow-600'
+                  }`}>
+                    {currentFrame.liveness.signals.blink_detected_recently ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Avg EAR:</span>
+                  <span className="font-mono text-gray-900">
+                    {currentFrame.liveness.signals.avg_ear?.toFixed(3)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Motion Consistency:</span>
+                  <span className={`font-medium ${
+                    currentFrame.liveness.signals.motion_label === 'consistent'
+                      ? 'text-green-600'
+                      : currentFrame.liveness.signals.motion_label === 'static' || currentFrame.liveness.signals.motion_label === 'unstable'
+                      ? 'text-red-600'
+                      : 'text-yellow-600'
+                  }`}>
+                    {currentFrame.liveness.signals.motion_label} ({currentFrame.liveness.signals.motion_consistency_score?.toFixed(2)})
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Motion Delta:</span>
+                  <span className="font-mono text-gray-900">
+                    {currentFrame.liveness.signals.motion_delta?.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Anti-Spoof Model:</span>
+                  <span className={`font-medium ${
+                    currentFrame.liveness.signals.anti_spoof_mode === 'onnxruntime' ? 'text-green-600' : 'text-yellow-600'
+                  }`}>
+                    {currentFrame.liveness.signals.anti_spoof_mode || 'fallback'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Anti-Spoof Live:</span>
+                  <span className="font-mono text-gray-900">
+                    {currentFrame.liveness.signals.anti_spoof_live_score?.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Anti-Spoof Label:</span>
+                  <span className={`font-medium ${
+                    currentFrame.liveness.signals.anti_spoof_label === 'live'
+                      ? 'text-green-600'
+                      : currentFrame.liveness.signals.anti_spoof_label === 'spoof'
+                      ? 'text-red-600'
+                      : 'text-yellow-600'
+                  }`}>
+                    {currentFrame.liveness.signals.anti_spoof_label}
+                  </span>
+                </div>
+                {currentFrame.liveness.signals.quality_reason && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Quality Reason:</span>
+                    <span className="font-medium text-orange-600 text-right">
+                      {currentFrame.liveness.signals.quality_reason}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
+        </div>
+      )}
+      {stats.passive_liveness && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-indigo-900 mb-2">Passive Liveness (Heuristic)</h3>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-indigo-700">Current:</span>
+              <span className="ml-1 font-semibold text-indigo-900">{stats.passive_liveness.label}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Avg Score:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.avg_score?.toFixed?.(2) ?? '0.00'}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Live:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.live ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Suspicious:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.suspicious ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Spoof:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.spoof ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Quality Low:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.quality_insufficient ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Motion Consistent:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.motion_consistent ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Motion Static:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.motion_static ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Motion Unstable:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.motion_unstable ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Motion Variable:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.motion_variable ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Evaluated:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.frames_evaluated ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Blink Count:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.blink_count ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Blink Rate:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.blink_rate_per_min?.toFixed?.(1) ?? '0.0'}/min</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Blink Recent:</span>
+              <span className={`ml-1 font-semibold ${stats.passive_liveness.stats?.blink_detected_recently ? 'text-green-700' : 'text-yellow-700'}`}>
+                {stats.passive_liveness.stats?.blink_detected_recently ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Model Live:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.anti_spoof_model_live ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Model Spoof:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.anti_spoof_model_spoof ?? 0}</span>
+            </div>
+            <div>
+              <span className="text-indigo-700">Model Missing:</span>
+              <span className="ml-1 font-mono text-indigo-900">{stats.passive_liveness.stats?.anti_spoof_model_missing ?? 0}</span>
+            </div>
+          </div>
+
+          {stats.passive_liveness?.model && (
+            <div className={`mt-4 rounded-lg border p-4 ${stats.passive_liveness.model.available ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+              <h3 className="font-semibold mb-2 text-gray-900">Anti-Spoof Model Status</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-600">Available:</span>
+                  <span className={`ml-1 font-semibold ${stats.passive_liveness.model.available ? 'text-green-700' : 'text-yellow-700'}`}>
+                    {stats.passive_liveness.model.available ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Mode:</span>
+                  <span className="ml-1 font-mono text-gray-900">{stats.passive_liveness.model.mode}</span>
+                </div>
+                <div className="col-span-2 break-all">
+                  <span className="text-gray-600">Path:</span>
+                  <span className="ml-1 font-mono text-gray-900">{stats.passive_liveness.model.path || 'Not configured'}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
