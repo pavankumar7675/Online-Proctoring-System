@@ -24,12 +24,19 @@ combines multiple deep learning models to ensure exam integrity. It performs:
 - Eye gaze tracking to detect looking away
 - Multi-person detection
 - Prohibited object detection (phones, books, laptops)
+- Passive liveness analysis (quality + blink + motion)
+- Optional ONNX anti-spoof scoring with heuristic fallback
 
 Technology Stack:
 - FaceNet: 128-dimensional face embeddings for identity verification
 - MediaPipe: Face detection and 468 facial landmarks
 - YOLOv8: Real-time object detection
 - OpenCV: Video processing and computer vision operations
+- Flask + Flask-SocketIO: Real-time backend and frame streaming APIs
+
+Runtime Modes:
+- Standalone mode (`app.py`): offline frame-skipping flow with a MAX_FRAMES cap.
+- Web mode (`server.py` + React client): real-time frame streaming, in-flight locking, latest-frame queueing, and live counters.
 
 
 ================================================================================
@@ -169,6 +176,9 @@ PHASE 3: VIDEO INITIALIZATION
 Purpose: Prepare video stream for processing
 Input: Video file path
 
+For web sessions (`server.py`), this phase is represented by session state initialization
+and reset when reference/session endpoints are called.
+
 Steps:
 1. Open video file with cv2.VideoCapture
 2. Initialize frame counters (frame_count, processed)
@@ -246,10 +256,16 @@ Frame Processing Sequence:
 5. → Go to SUB-FLOW B: Head Pose Estimation
 6. → Go to SUB-FLOW C: Eye Gaze Tracking
 7. → Go to SUB-FLOW D: YOLO Detection
-8. Compile and log results
-9. Increment counters
+8. → Go to SUB-FLOW E: Passive Liveness + Anti-Spoof
+9. Compile and emit/log results
+10. Increment counters (including live overlay counters)
 
 Output per frame: Single log line with all detection results
+
+Web mode notes:
+- Frontend keeps only latest queued frame while one frame is in-flight.
+- Backend serializes frame processing with a lock to avoid overlapping MediaPipe timestamps.
+- Session stop/reset clears timers, in-flight state, and capture queues.
 
 
 PHASE 6: FINAL DECISION
@@ -617,6 +633,30 @@ Purpose: Detect multiple persons and prohibited items
     └──────────────────┘
 
 
+SUB-FLOW E: PASSIVE LIVENESS + ANTI-SPOOF
+------------------------------------------
+Functions: evaluate_liveness_quality(), update_blink_metrics(), update_motion_consistency(),
+compute_passive_liveness_placeholder(), run_anti_spoof_inference()
+
+Purpose: Score whether the face stream appears live vs spoof using multiple signals.
+
+Signal groups:
+- Quality gate: face size ratio, brightness, blur/texture checks.
+- Blink signal: EAR history, blink count, blink rate, recent blink detection.
+- Motion signal: short-window movement consistency, jitter, and stability.
+- Anti-spoof signal: ONNX model output when configured; heuristic fallback otherwise.
+
+Output fields emitted per frame:
+- passive_score, passive_label, quality_reason/guidance
+- motion_consistency_score, motion_label, motion deltas
+- anti_spoof_live_score, anti_spoof_spoof_score, anti_spoof_label, anti_spoof_mode
+
+Session stats updated:
+- passive_liveness_stats.live/suspicious/spoof/quality_insufficient
+- anti_spoof_model_live/anti_spoof_model_spoof/anti_spoof_model_missing
+- motion_* counters, avg_score, blink_count, blink_rate_per_min
+
+
 ================================================================================
 5. DECISION LOGIC FLOW
 ================================================================================
@@ -745,6 +785,7 @@ INPUT DATA → PROCESSING → OUTPUT DATA
 │         │  - Eye gaze direction                │           │
 │         │  - Person count                      │           │
 │         │  - Object detection                  │           │
+│         │  - Passive liveness + anti-spoof     │           │
 │         └─────────┬──────────────────────────┘           │
 │                   │                                       │
 │         ┌─────────▼─────────┐                            │
@@ -755,6 +796,8 @@ INPUT DATA → PROCESSING → OUTPUT DATA
 │         │  - gaze_deviation │                            │
 │         │  - multiple_person│                            │
 │         │  - prohibited_obj │                            │
+│         │  - passive_liveness│                           │
+│         │  - anti_spoof_model│                          │
 │         └─────────┬─────────┘                            │
 │                   │                                       │
 └───────────────────┼───────────────────────────────────────┘
@@ -811,6 +854,23 @@ DATA STRUCTURES
      'Laptop': int
    }
    Example: {'Cell Phone': 5, 'Book': 2}
+
+5. Passive Liveness Stats: Dictionary
+    {
+       'live': int,
+       'suspicious': int,
+       'spoof': int,
+       'quality_insufficient': int,
+       'anti_spoof_model_live': int,
+       'anti_spoof_model_spoof': int,
+       'anti_spoof_model_missing': int,
+       'avg_score': float,
+       'frames_evaluated': int,
+       'blink_count': int,
+       'blink_rate_per_min': float,
+       'motion_consistency_score': float,
+       'motion_label': str
+    }
 
 
 ================================================================================

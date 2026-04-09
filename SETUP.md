@@ -5,7 +5,7 @@ This guide will help you quickly set up and run the Online Proctoring System web
 ## Prerequisites
 
 - Python 3.8 or higher
-- Node.js 16 or higher
+- Node.js 20.19 or higher (recommended for Vite 7)
 - npm (comes with Node.js)
 - Webcam
 
@@ -30,7 +30,12 @@ venv\Scripts\activate
 
 ### 1.3 Install Python Dependencies
 ```bash
-pip install flask flask-cors flask-socketio opencv-python mediapipe keras-facenet tensorflow ultralytics numpy
+pip install -r requirements.txt
+```
+
+Optional ONNX anti-spoof runtime:
+```bash
+pip install onnxruntime
 ```
 
 ### 1.4 Start Backend Server
@@ -57,11 +62,11 @@ npm install
 ```
 
 This will install:
-- React 19.2.0
+- React 18.2.0
 - Vite 7.2.4
 - Tailwind CSS 3.4.1
-- Socket.IO Client 4.7.2
-- Axios 1.6.5
+- Socket.IO Client 4.8.3
+- Axios 1.13.4
 - react-webcam 7.2.0
 - lucide-react 0.344.0
 
@@ -161,7 +166,7 @@ npm run dev
 
 **High CPU usage**
 - Frame processing is computationally intensive
-- Backend processes frames every 1 second (configurable)
+- Frontend captures frames at a short interval and keeps only the latest queued frame while one frame is in-flight
 - Close other resource-intensive applications
 
 **Baseline calibration taking too long**
@@ -173,7 +178,7 @@ npm run dev
 
 ```
 ┌─────────────┐                    ┌──────────────┐
-│   Browser   │  WebSocket (1s)    │ Flask Server │
+│   Browser   │  WebSocket stream   │ Flask Server │
 │   (React)   │◄──────────────────►│   (Python)   │
 │  Port 5173  │   Base64 Frames    │  Port 5000   │
 └─────────────┘                    └──────────────┘

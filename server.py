@@ -1441,6 +1441,7 @@ def handle_frame(data):
             }
         }
 
+
         write_liveness_debug_entry({
             'timestamp': time.time(),
             'frame_count': session_state['frame_count'],
